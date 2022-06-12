@@ -1,5 +1,55 @@
 version: 2.1
 
+orbs:
+  slack: circleci/slack@4.1.1
+
+commands:
+ destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      Workflow_ID:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.Workflow_ID >>
+            aws s3 rm s3://udapeople-<<parameters.Workflow_ID>> --recursive
+            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.Workflow_ID >>
+
+ extract-commit-message:
+    description: Extract commit message
+    steps:
+      - run:
+          name: Extract commit message
+          when: always
+          command: |
+            echo "export COMMIT_MESSAGE=\"$(git log --format=%B -n 1 $CIRCLE_SHA1)\"" >> $BASH_ENV
+            source $BASH_ENV
+
+ slack-notification-fail:
+    description: Send notification to Slack
+    steps:
+      - extract-commit-message
+
+      - slack/notify:
+          channel: T03JVF07YB1
+          event: fail
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                      "type": "mrkdwn",
+                      "text": "Your job *$CIRCLE_JOB* has *faild* :octagonal_sign: (<$CIRCLE_BUILD_URL|build #$CIRCLE_BUILD_NUM>)\n\nrepo: $CIRCLE_REPOSITORY_URL\n\nbranch: $CIRCLE_BRANCH\n\ncommitter: $CIRCLE_USERNAME\n\ncommit message: $COMMIT_MESSAGE"
+                  }
+                }
+              ]
+            }
+
 jobs:
   build-frontend:
     docker:
@@ -17,6 +67,8 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+
+      - slack-notification-fail
   build-backend:
     docker:
       - image: cimg/node:13.8.0
@@ -34,6 +86,8 @@ jobs:
           paths: [backend/node_modules]
           key: backend-build
 
+      - slack-notification-fail
+
   test-frontend:
     docker:
       - image: cimg/node:13.8.0
@@ -47,6 +101,7 @@ jobs:
             cd frontend
             npm install
             npm test
+      - slack-notification-fail
 
 
 
@@ -63,6 +118,7 @@ jobs:
             cd backend
             npm install
             npm test
+      - slack-notification-fail
 
   scan-frontend:
     docker:
@@ -78,6 +134,8 @@ jobs:
             npm install
             npm audit fix --force --audit-level=critical
             npm audit --audit-level=critical
+
+      - slack-notification-fail
   scan-backend:
     docker:
       - image: cimg/node:13.8.0
@@ -93,6 +151,7 @@ jobs:
             npm audit fix --force --audit-level=critical
             npm audit fix --force --audit-level=critical
             npm audit --audit-level=critical
+      - slack-notification-fail
 
 workflows:
   default:
