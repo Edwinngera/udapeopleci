@@ -1,9 +1,7 @@
 version: 2.1
 
-
 commands:
-
- revert-migrations:
+  revert-migrations:
     description: Revert the last migration
     parameters:
       Workflow_ID:
@@ -24,8 +22,7 @@ commands:
             fi
           no_output_timeout: 30m
 
-
- destroy-environment:
+  destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
       Workflow_ID:
@@ -40,7 +37,7 @@ commands:
             aws s3 rm s3://udapeople-<<parameters.Workflow_ID>> --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.Workflow_ID >>
 
- install_awscli:
+  install_awscli:
     description: Install AWS CLI v2
     steps:
       - run:
@@ -50,7 +47,7 @@ commands:
             unzip awscliv2.zip
             sudo ./aws/install
 
- install_ansible:
+  install_ansible:
     description: Install Ansible
     steps:
       - run:
@@ -61,8 +58,15 @@ commands:
             sudo add-apt-repository --yes --update ppa:ansible/ansible
             sudo apt install ansible -y
 
+install_nodejs:
+  description: Install Node.js 13
+  steps:
+    - run:
+        name: Install Node.js 13
+        command: |
+          curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+          sudo apt install -y nodejs
 
-   
 jobs:
   build-frontend:
     docker:
@@ -83,7 +87,6 @@ jobs:
 
       - destroy-environment
 
-    
   build-backend:
     docker:
       - image: cimg/node:13.8.0
@@ -103,8 +106,6 @@ jobs:
 
       - destroy-environment
 
-  
-
   test-frontend:
     docker:
       - image: cimg/node:13.8.0
@@ -120,9 +121,6 @@ jobs:
             npm test
 
       - destroy-environment
-   
-
-
 
   test-backend:
     docker:
@@ -139,7 +137,6 @@ jobs:
             npm test
 
       - destroy-environment
-  
 
   scan-frontend:
     docker:
@@ -157,7 +154,6 @@ jobs:
             npm audit --audit-level=critical
       - destroy-environment
 
- 
   scan-backend:
     docker:
       - image: cimg/node:13.8.0
@@ -176,41 +172,41 @@ jobs:
       - destroy-environment
 
   deploy-infrastructure:
-      docker:
-        - image: cimg/base:stable
-      steps:
-        - checkout
-        - install_awscli
-        - run:
-            name: Ensure back-end infrastructure exists
-            command: |
-              aws cloudformation deploy \
-                --template-file .circleci/files/backend.yml \
-                --tags project=udapeople \
-                --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
-        - run:
-            name: Ensure front-end infrastructure exist
-            command: |
-              aws cloudformation deploy \
-                --template-file .circleci/files/frontend.yml \
-                --tags project=udapeople \
-                --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
-        - run:
-            name: Add back-end ip to ansible inventory
-            command: |
-              BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
-                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-                --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                --output text)
-              echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
-              cat .circleci/ansible/inventory.txt
-        - persist_to_workspace:
-            root: ~/
-            paths:
-              - project/.circleci/ansible/inventory.txt
-        - destroy-environment
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - install_awscli
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/backend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/frontend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
+      - destroy-environment
 
   configure-infrastructure:
     docker:
@@ -231,7 +227,7 @@ jobs:
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment
 
- #Run Migrations
+  #Run Migrations
   run-migrations:
     docker:
       # Docker image here that supports NodeJS
@@ -273,7 +269,7 @@ jobs:
       - install_awscli
       - install_nodejs
       - restore_cache:
-          keys: [frontend-deps]
+          keys: [frontend-build]
       - run:
           name: Install dependencies
           command: |
@@ -297,8 +293,6 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-
-
 workflows:
   default:
     jobs:
@@ -319,13 +313,10 @@ workflows:
               only: [main]
 
       - configure-infrastructure:
-            requires: [deploy-infrastructure]
+          requires: [deploy-infrastructure]
 
       - run-migrations:
           requires: [configure-infrastructure]
 
       - deploy-frontend:
           requires: [run-migrations]
-
-      
-  
