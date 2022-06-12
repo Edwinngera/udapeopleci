@@ -17,7 +17,7 @@ commands:
             aws s3 rm s3://udapeople-<<parameters.Workflow_ID>> --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.Workflow_ID >>
 
-  install_awscli:
+ install_awscli:
     description: Install AWS CLI v2
     steps:
       - run:
