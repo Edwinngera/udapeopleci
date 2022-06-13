@@ -333,6 +333,7 @@ jobs:
       - revert-migrations
 
   smoke-test:
+  
     docker:
       # Lightweight Docker image
       - image: python:3.10-alpine3.16
