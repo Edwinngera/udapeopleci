@@ -333,7 +333,7 @@ jobs:
       - revert-migrations
 
   smoke-test:
-  
+
     docker:
       # Lightweight Docker image
       - image: python:3.10-alpine3.16
@@ -358,9 +358,9 @@ jobs:
             curl "${API_URL}/api/status"
             if curl -s "${API_URL}/api/status"
             then
-                return 0
-            else
                 return 1
+            else
+                return 0
             fi
       - run:
           name: Frontend smoke test.
