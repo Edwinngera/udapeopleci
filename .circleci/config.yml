@@ -293,36 +293,44 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-
-
   deploy-backend:
     docker:
-      - image: python:3.9.1-alpine3.12
+      - image: cimg/base:stable
     steps:
       - checkout
+      - install_awscli
+      - install_ansible
+      - install_nodejs
       - add_ssh_keys:
-          fingerprints:
-            - "35:8c:e9:0b:d5:4f:61:2e:d2:f3:2f:7a:31:4f:13:38"
-      - restore_cache:
-          keys: [backend-build]
+          fingerprints: ["35:8c:e9:0b:d5:4f:61:2e:d2:f3:2f:7a:31:4f:13:38"]
       - attach_workspace:
-          at: /tmp/artifacts
+          at: ~/
+      - restore_cache:
+          keys: [backend-deps]
       - run:
           name: Install dependencies
           command: |
-            apk update
-            apk add --update ansible aws-cli openssh-client tar
+            cd backend
+            npm install
       - run:
-          name: compress backend
+          name: Package Backend
           command: |
-            tar -C /tmp/artifacts/backend -czvf artifact.tar.gz .
+            cd backend
+            npm run build
+            tar -czf artifact.tar.gz dist/* package*
+            cd ..
+            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
       - run:
           name: Deploy backend
           command: |
+            export TYPEORM_MIGRATIONS_DIR=./migrations
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS=./migrations/*.ts
             cd .circleci/ansible
-            export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook -i /tmp/artifacts/inventory.txt deploy-backend.yml
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
+      - revert-migrations
       #- revert-migrations
 
   smoke-test:
