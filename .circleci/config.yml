@@ -154,13 +154,12 @@ jobs:
           command: |
             cd backend
             npm install
-            npm update mkdirp --depth 6
-            npm install --save-dev webpack@5.73.0
-            npm audit fix --audit-level=critical --force
+            npm audit fix --force --audit-level=critical
+            npm audit fix --force --audit-level=critical
             npm audit --audit-level=critical
-      - slack/notify:
-          event: fail
-          template: basic_fail_1
+      # - slack/notify:
+      #     event: fail
+      #     template: basic_fail_1
 
   deploy-infrastructure:
     docker:
