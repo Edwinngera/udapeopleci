@@ -240,7 +240,7 @@ jobs:
             # cat backend/.env
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml \
-            --key-file ~/.ssh/id_rsa_ab522568df4c3ad5481855d8f93bdfde
+            --key-file ~/.ssh/id_rsa_e4c0335f4cf54c0a63f0392d1a15f857
 
             
       # save backend back to workspace
