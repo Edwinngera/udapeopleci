@@ -239,7 +239,9 @@ jobs:
             # echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> backend/.env
             # cat backend/.env
             cd .circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml 
+            ansible-playbook -i inventory.txt configure-server.yml \
+            --key-file ~/.ssh/id_rsa_ab522568df4c3ad5481855d8f93bdfde
+
             
       # save backend back to workspace
       - persist_to_workspace:
@@ -357,7 +359,8 @@ jobs:
             cd .circleci/ansible
             echo "Contents of the inventory.txt file is ------$(tail -1 inventory.txt)"
             cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
+            ansible-playbook -i inventory.txt deploy-backend.yml \
+            --key-file ~/.ssh/id_rsa_e4c0335f4cf54c0a63f0392d1a15f857
            
       # Here's where you will add some code to rollback on failure
       - destroy-environment:
