@@ -317,20 +317,19 @@ jobs:
           command: |
             cd backend
             npm run build
-            tar -czf artifact.tar.gz dist/* package*
-            ls
             cd ..
-            ls
-            #cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
-      - run:
-          name: Deploy backend
-          command: |
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS=./migrations/*.ts
+            tar -C backend -czvf artifact.tar.gz .
+            tree -afC /root/project/.circleci -I *node_modules*
+            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
+            mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
             cd .circleci/ansible
+            echo "Contents of the inventory.txt file is ------$(tail -1 inventory.txt)"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
+        
+
+           
+      
       - destroy-environment
       - revert-migrations
       #- revert-migrations
