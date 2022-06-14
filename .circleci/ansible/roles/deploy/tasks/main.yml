@@ -2,7 +2,7 @@
   - name: Copy files
     become: true
     copy:
-      src: '/files/artifact.tar.gz'
+      src: '/backend/artifact.tar.gz'
       dest: /home/ubuntu/artifact.tar.gz
     remote_src: true
   - name: Unarchive
