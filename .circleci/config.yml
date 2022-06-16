@@ -390,7 +390,7 @@ jobs:
             --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
             --output text)
             export API_URL="http://${BACKEND_IP}:3030"
-            sleep 30
+          
             echo "${API_URL}"
             curl "${API_URL}/api/status"
             if curl -s "${API_URL}/api/status"
