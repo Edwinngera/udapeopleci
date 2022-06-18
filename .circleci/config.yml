@@ -6,7 +6,7 @@ orbs:
 parameters:
   workflow_id:
     type: string
-    default: '${CIRCLE_WORKFLOW_ID}'
+    default: "${CIRCLE_WORKFLOW_ID}"
 
 commands:
   destroy-environment:
@@ -36,7 +36,6 @@ commands:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
-
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -225,7 +224,7 @@ jobs:
       # Add ssh keys with fingerprint
       - add_ssh_keys:
           fingerprints:
-            - 'e4:c0:33:5f:4c:f5:4c:0a:63:f0:39:2d:1a:15:f8:57'
+            - "e4:c0:33:5f:4c:f5:4c:0a:63:f0:39:2d:1a:15:f8:57"
       - run:
           name: Install dependencies
           command: |
@@ -254,7 +253,6 @@ jobs:
             ansible-playbook -i inventory.txt configure-server.yml \
             --key-file ~/.ssh/id_rsa_e4c0335f4cf54c0a63f0392d1a15f857
 
-            
       # save backend back to workspace
       - persist_to_workspace:
           root: ~/
@@ -264,7 +262,6 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
-  
   run-migrations:
     docker:
       - image: cimg/node:13.8.0
@@ -292,7 +289,7 @@ jobs:
 
   deploy-frontend:
     docker:
-    #
+      #
       # Docker image here that supports AWS CLI
       # - image: amazon/aws-cli
       - image: python:3.10-alpine3.16
@@ -342,7 +339,7 @@ jobs:
       # Add ssh keys with fingerprint
       - add_ssh_keys:
           fingerprints:
-            - 'e4:c0:33:5f:4c:f5:4c:0a:63:f0:39:2d:1a:15:f8:57'
+            - "e4:c0:33:5f:4c:f5:4c:0a:63:f0:39:2d:1a:15:f8:57"
       # attach workspace
       - attach_workspace:
           at: ~/
@@ -367,7 +364,7 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml \
             --key-file ~/.ssh/id_rsa_e4c0335f4cf54c0a63f0392d1a15f857
-           
+
       # Here's where you will add some code to rollback on failure
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -376,53 +373,40 @@ jobs:
 
   smoke-test:
     docker:
-      # Lightweight Docker image
-      - image: python:3.10-alpine3.16
+      - image: cimg/base:stable
     steps:
-      # Checkout code from git
       - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            apk add --update --no-cache curl aws-cli tar gzip nodejs npm
-      - attach_workspace:
-          at: ~/
+      - install_awscli
+      - install_nodejs
       - run:
           name: Backend smoke test.
           command: |
-           
-            export BACKEND_IP=$(aws ec2 describe-instances \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
-            --output text)
-            export API_URL="http://${BACKEND_IP}:3030"
-          
-            echo "${API_URL}"
-            curl "${API_URL}/api/status"
-            if curl -s "${API_URL}/api/status"
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL=http://${BACKEND_PUBLIC_IP}:3030
+            sleep(30)
+            if curl -s $API_URL/api/status | grep "ok"
             then
-                return 0
+              exit 0
             else
-                return 1
+              exit 1
             fi
       - run:
           name: Frontend smoke test.
           command: |
-            export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-west-2.amazonaws.com/#/employees"            
-            echo $URL
-            if curl ${URL} | grep "Welcome"
+            FRONTEND_WEBSITE=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com
+            if curl -s $FRONTEND_WEBSITE | grep "Welcome"
             then
-              # Change this to 0 after the job fails
-              return 0
+              exit 0
             else
-              return 1
+              exit 1
             fi
       # - destroy-environment:
       #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       # - revert-migrations:
       #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-      
-      
 
   cloudfront-update:
     docker:
@@ -495,7 +479,7 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - 'ab:52:25:68:df:4c:3a:d5:48:18:55:d8:f9:3b:df:de'
+            - "ab:52:25:68:df:4c:3a:d5:48:18:55:d8:f9:3b:df:de"
       - run:
           name: Install deps
           command: |
