@@ -360,12 +360,6 @@ jobs:
             mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
             cd .circleci/ansible
             echo "Contents of the inventory.txt file is ------$(tail -1 inventory.txt)"
-
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS=./migrations/*.ts
-
-
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml \
             --key-file ~/.ssh/id_rsa_e4c0335f4cf54c0a63f0392d1a15f857
@@ -409,10 +403,10 @@ jobs:
               exit  1
             fi
 
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      # - destroy-environment:
+      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      # - revert-migrations:
+      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   #Update Cloudfront
   cloudfront-update:
