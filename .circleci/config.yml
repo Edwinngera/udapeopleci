@@ -45,8 +45,7 @@ commands:
           command: |
             curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
             sudo apt install -y nodejs
-
-
+            
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -392,21 +391,21 @@ jobs:
               --output text)
             export API_URL=http://${BACKEND_PUBLIC_IP}:3030
             sleep 30
-            if curl "${API_URL}/api/status" | grep "ok"
+            if curl -s $API_URL/api/status | grep "ok"
             then
-                return 0
+              exit 0
             else
-                return 1
+              exit 1
             fi
-                  - run:
+      - run:
           name: Frontend smoke test.
           command: |
             FRONTEND_WEBSITE=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.us-east-1.amazonaws.com
             if curl -s $FRONTEND_WEBSITE | grep "Welcome"
             then
-              return  1
+              exit  1
             else
-              return  1
+              exit  1
             fi
 
       - destroy-environment:
