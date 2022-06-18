@@ -45,7 +45,6 @@ commands:
           command: |
             curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
             sudo apt install -y nodejs
-            
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -96,7 +95,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build-v2]
+          keys: [backend-build]
       - run:
           name: Back-end build
           command: |
@@ -105,7 +104,7 @@ jobs:
             npm run build
       - save_cache:
           paths: [backend/node_modules]
-          key: backend-build-v2
+          key: backend-build
 
   test-frontend:
     docker:
@@ -133,7 +132,7 @@ jobs:
       - checkout
       # Restore from cache
       - restore_cache:
-          keys: [backend-build-v2]
+          keys: [backend-build]
       # Your job code here
       - run:
           name: Test backend
@@ -168,7 +167,7 @@ jobs:
       - checkout
       # Restore from cache
       - restore_cache:
-          keys: [backend-build-v2]
+          keys: [backend-build]
       # Your job code here
       - run:
           name: Analyse backend
@@ -223,10 +222,7 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
-
-
-
-
+  #Configure Infrastructure
   configure-infrastructure:
     docker:
       # Docker image here that supports Ansible
@@ -247,11 +243,11 @@ jobs:
       - attach_workspace:
           at: ~/
       - restore_cache:
-          keys: [backend-build-v2]
+          keys: [backend-build]
       - run:
           name: Configure server
           command: |
-        
+
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml \
             --key-file ~/.ssh/id_rsa_e4c0335f4cf54c0a63f0392d1a15f857
@@ -271,7 +267,7 @@ jobs:
     steps:
       - checkout
       - install_awscli
-     
+
       - run:
           name: Run migrations
           command: |
@@ -360,7 +356,6 @@ jobs:
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz .
-            tree -afC /root/project/.circleci -I *node_modules*
             mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
             mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
             cd .circleci/ansible
@@ -403,7 +398,7 @@ jobs:
             FRONTEND_WEBSITE=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.us-east-1.amazonaws.com
             if curl -s $FRONTEND_WEBSITE | grep "Welcome"
             then
-              exit  1
+              exit  0
             else
               exit  1
             fi
@@ -413,6 +408,7 @@ jobs:
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
+  #Update Cloudfront
   cloudfront-update:
     docker:
       # Docker image here that supports AWS CLI
@@ -447,6 +443,7 @@ jobs:
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
+  #Cleanup
   cleanup:
     docker:
       - image: amazon/aws-cli
@@ -490,7 +487,7 @@ jobs:
           command: |
             apk add --update aws-cli tar gzip ansible nodejs npm
       - restore_cache:
-          keys: [backend-build-v2]
+          keys: [backend-build]
       - attach_workspace:
           at: ~/
       - run:
@@ -534,3 +531,6 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
+
+      - cloudfront-update:
+          requires: [smoke-test]
