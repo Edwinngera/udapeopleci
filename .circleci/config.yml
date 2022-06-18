@@ -28,10 +28,10 @@ commands:
             --stack-name udapeople-frontend-<<parameters.workflow_id>>
 
   install_awscli:
-    description: Install AWS CLI v2
+    description: Install CLI
     steps:
       - run:
-          name: Install AWS CLI v2
+          name: Install CLI
           command: |
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
@@ -78,7 +78,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build-v2]
+          keys: [frontend-build]
       - run:
           name: Build front-end
           command: |
@@ -87,7 +87,7 @@ jobs:
             npm run build
       - save_cache:
           paths: [frontend/node_modules]
-          key: frontend-build-v2
+          key: frontend-build
 
   build-backend:
     docker:
@@ -115,7 +115,7 @@ jobs:
       - checkout
       # Restore from cache
       - restore_cache:
-          keys: [frontend-build-v2]
+          keys: [frontend-build]
       # Your job code here
       - run:
           name: Test frontend
@@ -149,7 +149,7 @@ jobs:
       - checkout
       # Restore from cache
       - restore_cache:
-          keys: [frontend-build-v2]
+          keys: [frontend-build]
       # Your job code here
       - run:
           name: Analyse frontend
@@ -222,6 +222,10 @@ jobs:
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
+
+
+
+
   configure-infrastructure:
     docker:
       # Docker image here that supports Ansible
@@ -246,18 +250,7 @@ jobs:
       - run:
           name: Configure server
           command: |
-            # # add environment variables to server
-            # echo ENVIRONMENT=production > backend/.env
-            # echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> backend/.env
-            # echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> backend/.env
-            # echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> backend/.env
-            # echo TYPEORM_HOST=$TYPEORM_HOST >> backend/.env
-            # echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> backend/.env
-            # echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> backend/.env
-            # echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> backend/.env
-            # echo TYPEORM_PORT=$TYPEORM_PORT >> backend/.env
-            # echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> backend/.env
-            # cat backend/.env
+        
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml \
             --key-file ~/.ssh/id_rsa_e4c0335f4cf54c0a63f0392d1a15f857
@@ -277,6 +270,7 @@ jobs:
     steps:
       - checkout
       - install_awscli
+     
       - run:
           name: Run migrations
           command: |
@@ -398,9 +392,9 @@ jobs:
             sleep 30
             if curl -s $API_URL/api/status | grep "ok"
             then
-              exit 0
+              return 0
             else
-              exit 1
+              return 1
             fi
       - run:
           name: Frontend smoke test.
@@ -408,16 +402,15 @@ jobs:
             FRONTEND_WEBSITE=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.us-east-1.amazonaws.com
             if curl -s $FRONTEND_WEBSITE | grep "Welcome"
             then
-              exit 0
+              return  1
             else
-              exit 1
+              return  1
             fi
 
-      #edwin
-      # - destroy-environment:
-      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-      # - revert-migrations:
-      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   cloudfront-update:
     docker:
