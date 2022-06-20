@@ -58,15 +58,7 @@ commands:
           when: on_fail
           # Add when this will run
           command: |
-            # # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            # SUCCESS = $(curl --insecure https://kvdb.io/TaxsuGLtg11JUCVpJDsk8W/migration_<< parameters.workflow_id >>)
-            # echo $SUCCESS
-            # if(( $SUCCESS==1 )); 
-            # then
-            #   cd ~/project/backend
-            #   npm install
-            #   npm run migration:revert
-            # fi
+
             cd ~/project/backend
             npm install
             npm run build
@@ -123,6 +115,7 @@ jobs:
             cd frontend
             npm install
             npm run test
+
   test-backend:
     docker:
       # Docker image here
@@ -174,10 +167,10 @@ jobs:
           command: |
             cd backend
             npm install
-            npm update mkdirp --depth 6
-            npm install --save-dev webpack@5.73.0
             npm audit fix --audit-level=critical --force
+            npm audit fix --force
             npm audit --audit-level=critical
+
       # - slack/notify:
       #     event: fail
       #     template: basic_fail_1
@@ -306,7 +299,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-          
+
             export BACKEND_IP=$(tail -1 .circleci/ansible/inventory.txt)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
@@ -400,38 +393,38 @@ jobs:
               exit  1
             fi
 
-      # - destroy-environment:
-      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-      # - revert-migrations:
-      #     workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   #Update Cloudfront
   cloudfront-update:
-      docker:
-        - image: amazon/aws-cli
-      steps:
-        - checkout
-        - run:
-            name: Install dependencies
-            command: |
-              yum -y install sudo
-              yum -y install tar
-              yum -y install gzip
-              yum install -y curl
-              yum -y update upgrade 
-        - run:
-            name: Update cloudfront distribution
-            command: |
-              aws cloudformation deploy \
-              --template-file .circleci/files/cloudfront.yml \
-              --stack-name InitialStack \
-              --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --tags project=udapeople-${CIRCLE_WORKFLOW_ID:0:7}
-        # Here's where you will add some code to rollback on failure
-        - destroy-environment:
-            workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-        - revert-migrations:
-            workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum -y install sudo
+            yum -y install tar
+            yum -y install gzip
+            yum install -y curl
+            yum -y update upgrade
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/cloudfront.yml \
+            --stack-name InitialStack \
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+            --tags project=udapeople-${CIRCLE_WORKFLOW_ID:0:7}
+      # Here's where you will add some code to rollback on failure
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   #Cleanup
   cleanup:
@@ -493,9 +486,7 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
-      # - cleanup:
-      #     requires: [cloudfront-update]
-  
-
+      - cleanup:
+          requires: [cloudfront-update]
 #End
 #End
