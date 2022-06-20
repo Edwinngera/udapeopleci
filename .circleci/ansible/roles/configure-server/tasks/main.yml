@@ -1,16 +1,16 @@
 
 ---
-- name: 'update and upgrade packages.'
+- name: 'upgrade packages.'
   become: yes
   apt:
     upgrade: yes
     update_cache: yes
     cache_valid_time: 86400
-- name: remove unneeded deps
+- name: remove dependencies
   become: yes
   apt:
     autoremove: yes
-- name: install deps
+- name: install dependencies
   become: yes
   apt:
     name: ['nodejs', 'npm']
