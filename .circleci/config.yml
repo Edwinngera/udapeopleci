@@ -63,6 +63,8 @@ commands:
             npm install
             npm run build
             npm run migrations:revert
+
+            
 jobs:
   build-frontend:
     docker:
@@ -80,6 +82,8 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+
+
 
   build-backend:
     docker:
