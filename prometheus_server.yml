@@ -10,7 +10,7 @@ Resources:
   InstanceSecurityGroup1:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: edwinsecgroup
+      GroupName: securitygroupp
       GroupDescription: Allow port 22 and port 3030.
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -24,6 +24,10 @@ Resources:
         - IpProtocol: tcp
           FromPort: 9090
           ToPort: 9090
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9093
+          ToPort: 9093
           CidrIp: 0.0.0.0/0
 
   EC2Instance:
